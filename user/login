@@ -1,1 +1,35 @@
+// login.js (Backend - Express.js)
+const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { getUserByEmail } = require('./userService'); // Exemple de service pour récupérer l'utilisateur depuis la DB
+
+const router = express.Router();
+
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await getUserByEmail(email);
+    
+    if (!user) {
+      return res.status(400).json({ message: "Utilisateur non trouvé." });
+    }
+
+    // Comparer le mot de passe avec bcrypt
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Mot de passe incorrect." });
+    }
+
+    // Créer un token JWT
+    const token = jwt.sign({ userId: user.id }, 'secretKey', { expiresIn: '1h' });
+
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ message: "Erreur interne." });
+  }
+});
+
+module.exports = router;
 
