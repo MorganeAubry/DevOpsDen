@@ -1,1 +1,31 @@
+// register.js (Backend - Express.js)
+const express = require('express');
+const bcrypt = require('bcrypt');
+const { createUser } = require('./userService'); // Service pour ajouter un utilisateur à la DB
+
+const router = express.Router();
+
+router.post('/register', async (req, res) => {
+  const { email, password, username } = req.body;
+
+  try {
+    // Vérifier si l'email est déjà pris
+    const existingUser = await getUserByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({ message: "Email déjà utilisé." });
+    }
+
+    // Hasher le mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Créer l'utilisateur dans la base de données
+    const user = await createUser({ email, password: hashedPassword, username });
+
+    res.status(201).json({ message: "Utilisateur créé avec succès." });
+  } catch (error) {
+    res.status(500).json({ message: "Erreur interne." });
+  }
+});
+
+module.exports = router;
 
