@@ -1,1 +1,48 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import List
+
+app = FastAPI()
+
+# Simulated database
+TAGS = [{"id": 1, "name": "python"}, {"id": 2, "name": "fastapi"}, {"id": 3, "name": "api"}]
+
+class Tag(BaseModel):
+    name: str
+
+@app.get("/tags")
+async def get_tags():
+    """
+    Get all tags.
+    """
+    return TAGS
+
+@app.get("/tags/{tag_id}")
+async def get_tag(tag_id: int):
+    """
+    Get tag by ID.
+    """
+    tag = next((tag for tag in TAGS if tag["id"] == tag_id), None)
+    if not tag:
+        raise HTTPException(status_code=404, detail="Tag not found")
+    return tag
+
+@app.post("/tags")
+async def create_tag(tag: Tag):
+    """
+    Create a new tag.
+    """
+    new_id = max(tag["id"] for tag in TAGS) + 1 if TAGS else 1
+    new_tag = {"id": new_id, "name": tag.name}
+    TAGS.append(new_tag)
+    return new_tag
+
+@app.delete("/tags/{tag_id}")
+async def delete_tag(tag_id: int):
+    """
+    Delete a tag by ID.
+    """
+    global TAGS
+    TAGS = [tag for tag in TAGS if tag["id"] != tag_id]
+    return {"message": "Tag deleted successfully"}
 
