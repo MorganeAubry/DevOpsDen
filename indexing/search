@@ -1,1 +1,41 @@
+from fastapi import FastAPI, HTTPException, Query
+from typing import List, Optional
+
+app = FastAPI()
+
+# Simulated database
+DATABASE = [
+    {"id": 1, "title": "How to use Python?", "content": "I want to learn Python basics.", "tags": ["python", "basics"]},
+    {"id": 2, "title": "Understanding FastAPI", "content": "What are the key features of FastAPI?", "tags": ["fastapi", "api"]},
+    {"id": 3, "title": "What is REST API?", "content": "Explanation about REST principles.", "tags": ["rest", "api"]},
+]
+
+@app.get("/search")
+async def search_content(
+    query: str = Query(..., description="Search query string"),
+    tags: Optional[List[str]] = Query(None, description="Filter by tags"),
+    limit: int = 10,
+    offset: int = 0
+):
+    """
+    Search content by title or content with optional tag filtering.
+    """
+    results = [
+        item for item in DATABASE
+        if query.lower() in item["title"].lower() or query.lower() in item["content"].lower()
+    ]
+    if tags:
+        results = [item for item in results if set(tags).issubset(set(item["tags"]))]
+    
+    return {"total": len(results), "results": results[offset:offset+limit]}
+
+@app.get("/content/{content_id}")
+async def get_content_by_id(content_id: int):
+    """
+    Get specific content by ID.
+    """
+    content = next((item for item in DATABASE if item["id"] == content_id), None)
+    if not content:
+        raise HTTPException(status_code=404, detail="Content not found")
+    return content
 
